@@ -236,19 +236,35 @@ SQL
     @page = @page.to_i
 
     n = 20
-    statement = db.prepare('SELECT * FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?')
+    sql = <<SQL
+SELECT
+  m.id,
+  m.created_at,
+  m.content,
+  name,
+  display_name,
+  avatar_icon
+FROM message as m
+  join user as u on (m.user_id = u.id)
+WHERE
+  channel_id = ?
+ORDER BY m.id DESC
+  LIMIT ? OFFSET ?
+SQL
+    statement = db.prepare(sql)
     rows = statement.execute(@channel_id, n, (@page - 1) * n).to_a
     statement.close
-    @messages = []
-    rows.each do |row|
+    @messages = rows.map do |row|
       r = {}
       r['id'] = row['id']
-      statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE id = ?')
-      r['user'] = statement.execute(row['user_id']).first
+      r['user'] = {
+        'name' => row['name'],
+        'display_name' => row['display_name'],
+        'avatar_icon' => row['avatar_icon']
+      }
       r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
       r['content'] = row['content']
-      @messages << r
-      statement.close
+      r
     end
     @messages.reverse!
 
