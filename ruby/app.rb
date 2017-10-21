@@ -339,6 +339,16 @@ class App < Sinatra::Base
     redirect '/', 303
   end
 
+  get '/_migrate_to_file_' do
+    statement = db.prepare('SELECT * FROM image')
+    statement.execute.each do |e|
+      save_file(icon_path(e['name']), e['data'])
+    end
+    statement.close
+
+    200
+  end
+
   get '/icons/:file_name' do
     file_name = params[:file_name]
     statement = db.prepare('SELECT * FROM image WHERE name = ?')
