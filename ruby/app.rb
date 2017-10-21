@@ -16,6 +16,14 @@ class App < Sinatra::Base
     register Sinatra::Reloader
   end
 
+  configure do
+    require 'ddtrace'
+    require 'ddtrace/contrib/sinatra/tracer'
+    register Datadog::Contrib::Sinatra::Tracer
+    
+    settings.datadog_tracer.configure default_service: 'isucon7q' #, debug: true
+  end
+
   helpers do
     def user
       return @_user unless @_user.nil?
