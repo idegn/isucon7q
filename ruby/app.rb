@@ -295,7 +295,7 @@ class App < Sinatra::Base
     display_name = params[:display_name]
     avatar_name = nil
     avatar_data = nil
-    avatar_file_path = nil
+    avatar_icon_path = nil
 
     file = params[:avatar_icon]
     unless file.nil?
@@ -315,11 +315,7 @@ class App < Sinatra::Base
 
         avatar_name = digest + ext
         avatar_data = data
-        avatar_file_path = settings.public_folder + "/icons/#{avatar_name}"
-
-        puts nil, '<============================================================ OUTPUT START HERE'
-        p avatar_file_path
-        puts '<============================================================ OUTPUT CLOSE HERE', nil
+        avatar_icon_path = settings.public_folder + "/icons/#{avatar_name}"
       end
     end
 
@@ -331,7 +327,7 @@ class App < Sinatra::Base
       statement.execute(avatar_name, user['id'])
       statement.close
 
-      save_file(avatar_file_path, avatar_data)
+      save_file(avatar_icon_path, avatar_data)
     end
 
     if !display_name.nil? || !display_name.empty?
