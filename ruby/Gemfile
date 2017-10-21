@@ -4,5 +4,3 @@ gem 'mysql2'
 gem 'puma'
 gem 'sinatra'
 gem 'sinatra-contrib'
-gem 'rack-lineprof', group: :development
-gem 'ddtrace'
