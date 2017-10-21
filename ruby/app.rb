@@ -97,7 +97,7 @@ class App < Sinatra::Base
 
   post '/login' do
     name = params[:name]
-    statement = db.prepare('SELECT * FROM user WHERE name = ?')
+    statement = db.prepare('SELECT id, salt, password FROM user WHERE name = ?')
     row = statement.execute(name).first
     if row.nil? || row['password'] != Digest::SHA1.hexdigest(row['salt'] + params[:password])
       return 403
@@ -263,7 +263,7 @@ SQL
     @channels, = get_channel_list_info
 
     user_name = params[:user_name]
-    statement = db.prepare('SELECT * FROM user WHERE name = ?')
+    statement = db.prepare('SELECT id, name, display_name, avatar_icon FROM user WHERE name = ?')
     @user = statement.execute(user_name).first
     statement.close
 
