@@ -19,7 +19,7 @@ class App < Sinatra::Base
 
   helpers do
     def icon_path(name)
-      settings.public_folder + "/icons/#{name}"
+      File.expand_path('../../public', __FILE__) + "/icons/#{name}"
     end
 
     def user
