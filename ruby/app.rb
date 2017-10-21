@@ -138,6 +138,10 @@ class App < Sinatra::Base
     channel_id = params[:channel_id].to_i
     last_message_id = params[:last_message_id].to_i
 
+    if channel_id.nil? && last_message_id.nil?
+      content_type :json
+      return [].to_json
+    end
     sql = <<SQL
 SELECT
   m.id,
