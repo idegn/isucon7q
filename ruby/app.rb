@@ -345,12 +345,8 @@ SQL
       end
     end
 
-    if !avatar_name.nil? && !avatar_data.nil?
-      statement = db.prepare('UPDATE user SET avatar_icon = ? WHERE id = ?')
-      statement.execute(avatar_name, user['id'])
-      statement.close
-
-      t = Thread.new do
+    t = Thread.new do
+      if !avatar_name.nil? && !avatar_data.nil?
         begin
           Net::HTTP.post_form(URI.parse('http:///192.168.101.2:5000/_save_icon_'),
                               { 'avatar_data' => avatar_data, 'avatar_name' => avatar_name })
@@ -358,9 +354,18 @@ SQL
           puts e
         end
       end
+    end
 
-      save_file(avatar_icon_path, avatar_data)
-      t.join
+    t2 = Thread.new do
+      if !avatar_name.nil? && !avatar_data.nil?
+        save_file(avatar_icon_path, avatar_data)
+      end
+    end
+
+    if !avatar_name.nil? && !avatar_data.nil?
+      statement = db.prepare('UPDATE user SET avatar_icon = ? WHERE id = ?')
+      statement.execute(avatar_name, user['id'])
+      statement.close
     end
 
     if !display_name.nil? || !display_name.empty?
@@ -368,6 +373,9 @@ SQL
       statement.execute(display_name, user['id'])
       statement.close
     end
+
+    t.join
+    t2.join
 
     redirect '/', 303
   end
