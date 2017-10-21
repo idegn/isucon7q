@@ -1,6 +1,7 @@
 require 'digest/sha1'
 require 'mysql2'
 require 'sinatra/base'
+require 'net/http'
 
 class App < Sinatra::Base
   configure do
@@ -352,7 +353,17 @@ SQL
       statement.execute(avatar_name, user['id'])
       statement.close
 
+      t = Thread.new do
+        begin
+          Net::HTTP.post_form(URI.parse('http:///192.168.101.2:5000/_save_icon_'),
+                              { 'avatar_data' => avatar_data, 'avatar_name' => avatar_name })
+        rescue => e
+          puts e
+        end
+      end
+
       save_file(avatar_icon_path, avatar_data)
+      t.join
     end
 
     if !display_name.nil? || !display_name.empty?
@@ -362,6 +373,12 @@ SQL
     end
 
     redirect '/', 303
+  end
+
+  post '/_save_icon_' do
+    avatar_data = params[:avatar_data]
+    avatar_name = params[:avatar_name]
+    save_file(icon_path(avatar_name), avatar_data)
   end
 
   get '/_migrate_to_file_' do
