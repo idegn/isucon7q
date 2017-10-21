@@ -25,6 +25,10 @@ class App < Sinatra::Base
   end
 
   helpers do
+    def icon_path(name)
+      settings.public_folder + "/icons/#{name}"
+    end
+
     def user
       return @_user unless @_user.nil?
 
@@ -38,6 +42,13 @@ class App < Sinatra::Base
       end
 
       @_user
+    end
+
+    def save_file(save_path, data)
+      File.open(save_path, 'wb') do |f|
+        f.write(data)
+        puts "save file to #{save_path}"
+      end
     end
   end
 
@@ -308,6 +319,7 @@ SQL
     display_name = params[:display_name]
     avatar_name = nil
     avatar_data = nil
+    avatar_icon_path = nil
 
     file = params[:avatar_icon]
     unless file.nil?
@@ -327,6 +339,7 @@ SQL
 
         avatar_name = digest + ext
         avatar_data = data
+        avatar_icon_path = settings.public_folder + "/icons/#{avatar_name}"
       end
     end
 
@@ -337,6 +350,8 @@ SQL
       statement = db.prepare('UPDATE user SET avatar_icon = ? WHERE id = ?')
       statement.execute(avatar_name, user['id'])
       statement.close
+
+      save_file(avatar_icon_path, avatar_data)
     end
 
     if !display_name.nil? || !display_name.empty?
@@ -348,16 +363,24 @@ SQL
     redirect '/', 303
   end
 
+  get '/_migrate_to_file_' do
+    statement = db.prepare('SELECT * FROM image')
+    statement.execute.each do |e|
+      save_file(icon_path(e['name']), e['data'])
+    end
+    statement.close
+
+    200
+  end
+
   get '/icons/:file_name' do
     file_name = params[:file_name]
-    statement = db.prepare('SELECT * FROM image WHERE name = ?')
-    row = statement.execute(file_name).first
-    statement.close
     ext = file_name.include?('.') ? File.extname(file_name) : ''
     mime = ext2mime(ext)
-    if !row.nil? && !mime.empty?
-      content_type mime
-      return row['data']
+    if File.exist?(icon_path(file_name)) && !mime.empty?
+      headers 'X-Accel-Redirect' => "/icons/#{file_name}"
+      headers "Content-Type" => mime
+      body ''
     end
     404
   end
