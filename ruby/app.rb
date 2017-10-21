@@ -46,9 +46,9 @@ class App < Sinatra::Base
 
     def save_file(save_path, data)
       File.open(save_path, 'wb') do |f|
-			  f.write(data)
+        f.write(data)
         puts "save file to #{save_path}"
-		  end
+      end
     end
   end
 
