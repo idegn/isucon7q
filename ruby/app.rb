@@ -25,6 +25,10 @@ class App < Sinatra::Base
   end
 
   helpers do
+    def icon_path(name)
+      settings.public_folder + "/icons/#{name}"
+    end
+
     def user
       return @_user unless @_user.nil?
 
