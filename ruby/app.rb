@@ -104,7 +104,7 @@ class App < Sinatra::Base
 
   post '/login' do
     name = params[:name]
-    statement = db.prepare('SELECT id, salt, password FROM user WHERE name = ?')
+    statement = db.prepare('SELECT * FROM user WHERE name = ?')
     row = statement.execute(name).first
     if row.nil? || row['password'] != Digest::SHA1.hexdigest(row['salt'] + params[:password])
       return 403
@@ -138,6 +138,10 @@ class App < Sinatra::Base
     channel_id = params[:channel_id].to_i
     last_message_id = params[:last_message_id].to_i
 
+    if channel_id.nil? && last_message_id.nil?
+      content_type :json
+      return [].to_json
+    end
     sql = <<SQL
 SELECT
   m.id,
@@ -197,7 +201,7 @@ SQL
 
     res = []
     channel_ids.each do |channel_id|
-      statement = db.prepare('SELECT message_id FROM haveread WHERE user_id = ? AND channel_id = ?')
+      statement = db.prepare('SELECT * FROM haveread WHERE user_id = ? AND channel_id = ?')
       row = statement.execute(user_id, channel_id).first
       statement.close
       r = {}
@@ -234,7 +238,7 @@ SQL
     @page = @page.to_i
 
     n = 20
-    statement = db.prepare('SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?')
+    statement = db.prepare('SELECT * FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?')
     rows = statement.execute(@channel_id, n, (@page - 1) * n).to_a
     statement.close
     @messages = []
@@ -269,7 +273,7 @@ SQL
     @channels, = get_channel_list_info
 
     user_name = params[:user_name]
-    statement = db.prepare('SELECT name, display_name, avatar_icon FROM user WHERE name = ?')
+    statement = db.prepare('SELECT * FROM user WHERE name = ?')
     @user = statement.execute(user_name).first
     statement.close
 
