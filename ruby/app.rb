@@ -196,26 +196,23 @@ SQL
 
     sleep 1.0
 
-    rows = db.query('SELECT id FROM channel').to_a
-    channel_ids = rows.map { |row| row['id'] }
-
-    res = []
-    channel_ids.each do |channel_id|
-      statement = db.prepare('SELECT * FROM haveread WHERE user_id = ? AND channel_id = ?')
-      row = statement.execute(user_id, channel_id).first
-      statement.close
-      r = {}
-      r['channel_id'] = channel_id
-      r['unread'] = if row.nil?
-        statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?')
-        statement.execute(channel_id).first['cnt']
-      else
-        statement = db.prepare('SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id')
-        statement.execute(channel_id, row['message_id']).first['cnt']
-      end
-      statement.close
-      res << r
-    end
+    sql = <<SQL
+select
+  tmp.channel_id,
+  count(m.id) as unread
+from
+  (select
+    c.id as channel_id,
+    if(h.message_id is null, 0, h.message_id) as read_id
+  from
+    channel as c
+    left join haveread as h on (c.id = h.channel_id and user_id = ?)
+    ) as tmp
+  left join message as m on (tmp.channel_id = m.channel_id and m.id > tmp.read_id)
+group by tmp.channel_id
+SQL
+    statement = db.prepare(sql)
+    res = statement.execute(user_id).to_a
 
     content_type :json
     res.to_json
